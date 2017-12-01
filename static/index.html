@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>nodejs</title>
+    <style>
+        #app .delete{
+            display: inline-block;
+            background: #eee;
+            margin-left: 5px;
+            padding: 0 5px;
+        }
+        .alertBox{
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .shadow{
+            width: 100%;
+            height: 100%;
+            background: #eee;
+            opacity: 0.6;
+        }
+        .alertBox form{
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .alertBox form fieldset{
+            width: 400px;
+            height: 200px;
+            text-align: center;
+            background: #fff;
+        }
+    </style>
+    <script src="./js/jquery-3.2.1.min.js"></script>
+    <script src="./js/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@0.12.0/dist/axios.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <h1>hello, <span v-text="title"></span>!</h1>
+        <button @click="addMember">点击添加成员</button>
+        <ul>
+            <li v-for="user in users">
+                <p>姓名: <span v-text="user.name"></span><a href="javascript:;" class="delete" @click="deleteMember(user)">X</a></p>
+                <p>年龄: <span v-text="user.age"></span></p>
+                <p>职业: <span v-text="user.jobs"></span></p>
+            </li>
+        </ul>
+
+        <div class="alertBox" v-if="isAdd">
+            <div class="shadow"></div>
+            <form action="">
+                <fieldset>
+                    <legend>添加成员信息</legend>
+                    <p>姓名: <input type="text" v-model="add_person.name"></p>
+                    <p>年龄: <input type="number" v-model="add_person.age"></p>
+                    <p>职业: <input type="text" v-model="add_person.jobs"></p>
+                    <input type="button" value="提交" @click="addToMember">
+                    <input type="button" value="取消" @click="addMember">
+                </fieldset>
+            </form>
+        </div>
+        
+    </div>
+
+    <script>
+        $(function () {
+            var host = 'http://localhost:3000';
+            var vm = new Vue({
+                el: '#app',
+                data: {
+                    title: 'Node Club members',
+                    users: [],
+                    isAdd: false,
+                    add_person: {
+                        name: '',
+                        age: 0,
+                        jobs: ''
+                    }
+                },
+                methods: {
+                    deleteMember: function (val) {
+                        var _this = this;
+                        axios.post(host + '/api/del-user', 
+                        {
+                            id: val.id
+                        }).then(function (res) {
+                            if(res.data.data && res.data.success == 1){
+                                alert('删除成功！');
+                            }
+                            _this.getUsers();
+                        }).catch(function (err) {
+                            console.log(err);
+                        });
+                    },
+                    addMember: function () {
+                        this.isAdd = !this.isAdd;
+                        if(this.isAdd){
+                            this.add_person = {
+                                name: '',
+                                age: 0,
+                                jobs: ''
+                            }; 
+                        }
+                    },
+                    addToMember: function () {
+                        var _this = this;
+                        axios.post(host + '/api/add-user', this.add_person).then(function (res) {
+                            if(res.data.success == 1){
+                                _this.getUsers();
+                                _this.add_person = {
+                                    name: '',
+                                    age: 0,
+                                    jobs: ''
+                                };
+                                _this.addMember();
+                            }
+                        }).catch(function (err) {
+                            console.log(err);
+                        });
+                    },
+                    getUsers: function () {
+                        var _this = this;
+                        axios.get(host + '/api/get-users-list').then(function (res) {
+                            _this.users = res.data;
+                        }).catch(function (err) {
+                            console.log(err);
+                        });
+                    }
+                },
+                mounted: function (){
+                    this.getUsers();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
